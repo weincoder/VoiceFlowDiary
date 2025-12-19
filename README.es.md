@@ -1,3 +1,9 @@
+<div align="center">
+  <a href="README.md">
+    <img src="https://img.shields.io/badge/Lang-English-blue" alt="Read in English" />
+  </a>
+</div>
+
 # 🌟 VoiceFlow Diary
 
 <div align="center">

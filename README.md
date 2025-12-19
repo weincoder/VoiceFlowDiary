@@ -1,3 +1,9 @@
+<div align="center">
+  <a href="README.es.md">
+    <img src="https://img.shields.io/badge/Lang-Español-red" alt="Leer en Español" />
+  </a>
+</div>
+
 # 🌟 VoiceFlow Diary
 
 <div align="center">
