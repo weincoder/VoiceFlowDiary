@@ -298,9 +298,10 @@ Transcripción:
   Future<String?> generateImage({
     required String content,
     String? title,
+    String? userGenderPrompt,
   }) async {
     try {
-      final prompt = _buildImagePrompt(content, title);
+      final prompt = _buildImagePrompt(content, title, userGenderPrompt);
       debugPrint('Generando imagen con prompt: $prompt');
 
       final response = await _imageModel.generateImages(prompt);
@@ -334,18 +335,30 @@ Transcripción:
     }
   }
 
-  String _buildImagePrompt(String content, String? title) {
+  String _buildImagePrompt(
+    String content,
+    String? title,
+    String? userGenderPrompt,
+  ) {
     // Extraer los primeros 200 caracteres para el prompt
     final summary = content.length > 200 ? content.substring(0, 200) : content;
+
+    // Determinar qué mostrar en la imagen según el género
+    String characterDescription = '';
+    if (userGenderPrompt != null && userGenderPrompt.isNotEmpty) {
+      characterDescription =
+          '\nIf showing a person in the scene, depict $userGenderPrompt.';
+    }
 
     return '''
 Create a beautiful, artistic illustration that captures the essence of this diary entry.
 
 ${title != null && title.isNotEmpty ? 'Title: $title\n' : ''}
-Content: $summary
+Content: $summary$characterDescription
 
 Style: Minimalist, warm colors, dreamy atmosphere, suitable for a personal diary.
 Focus on mood and emotions rather than literal representation.
+
 ''';
   }
 }

@@ -1,0 +1,109 @@
+{
+  "@@locale": "en",
+  "appTitle": "Voice Diary",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  
+  "myDiary": "My Diary",
+  "@myDiary": {
+    "description": "Title of the home page"
+  },
+  
+  "voiceCommands": "Voice Commands",
+  "statistics": "Statistics",
+  "search": "Search",
+  "settings": "Settings",
+  
+  "startYourJourney": "Start Your Journey",
+  "captureYourThoughts": "Capture your thoughts, moments\nand emotions with AI",
+  "firstEntry": "First Entry",
+  
+  "newEntry": "New Entry",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  
+  "title": "Title",
+  "titleHint": "Entry title (optional)",
+  "content": "Content",
+  "contentHint": "Write about your day, your thoughts, your feelings...",
+  "contentCannotBeEmpty": "Content cannot be empty",
+  
+  "addImage": "Add Image",
+  "takePhoto": "Take Photo",
+  "chooseFromGallery": "Choose from Gallery",
+  "generatingImage": "Generating image with AI...",
+  
+  "analyzing": "Analyzing...",
+  "savingEntry": "Saving entry...",
+  "entrySaved": "Entry saved successfully",
+  "entryDeleted": "Entry deleted",
+  "errorSaving": "Error saving entry",
+  "errorDeleting": "Error deleting",
+  
+  "confirmDelete": "Confirm Delete",
+  "confirmDeleteMessage": "Are you sure you want to delete this entry?",
+  "yes": "Yes",
+  "no": "No",
+  
+  "today": "Today",
+  "yesterday": "Yesterday",
+  
+  "veryHappy": "Very Happy",
+  "happy": "Happy",
+  "neutral": "Neutral",
+  "sad": "Sad",
+  "verySad": "Very Sad",
+  "mixed": "Mixed",
+  
+  "userProfile": "User Profile",
+  "name": "Name",
+  "nameHint": "Enter your name",
+  "gender": "Gender",
+  "genderHelp": "This helps personalize AI-generated images",
+  "male": "Male",
+  "female": "Female",
+  "nonBinary": "Non-binary",
+  "preferNotToSay": "Prefer not to say",
+  "age": "Age",
+  "ageHint": "Enter your age",
+  "saveProfile": "Save Profile",
+  "profileSaved": "Profile saved successfully",
+  "optional": "optional",
+  
+  "voiceAssistantHelp": "Voice Assistant Help",
+  "voiceAssistantDescription": "You can use your voice to interact with the diary. Here are some things you can do:",
+  "changeColor": "Change Color",
+  "changeColorExample": "\"Change the app color to blue\"",
+  "askQuestions": "Ask Questions",
+  "askQuestionsExample": "\"What's the weather like?\"",
+  "getDiarySummary": "Get Diary Summary",
+  "getDiarySummaryExample": "\"Summarize my week\"",
+  "deleteEntry": "Delete Entry",
+  "deleteEntryExample": "\"Delete my last entry\"",
+  "close": "Close",
+  
+  "loadingEntries": "Loading entries...",
+  "errorLoadingEntries": "Error loading entries",
+  "noEntries": "No entries yet",
+  
+  "errorSelectingImage": "Error selecting image",
+  "errorTakingPhoto": "Error taking photo",
+  
+  "recording": "Recording...",
+  "processing": "Processing...",
+  "tapToSpeak": "Tap to speak",
+  "listeningLive": "Listening (Live mode)...",
+  
+  "downloadImage": "Download",
+  "image": "Image",
+  "imageDownloaded": "Image saved to gallery",
+  "errorDownloadingImage": "Error downloading image",
+  "permissionDenied": "Permission Denied",
+  "needsStoragePermission": "This app needs storage permission to save images.",
+  "openSettings": "Open Settings",
+  
+  "months": "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec"
+}

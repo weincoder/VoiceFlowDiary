@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:example/config/models/user_profile.dart';
 
 class AppState with ChangeNotifier {
   double fontSizeFactor = 1;
@@ -7,6 +8,8 @@ class AppState with ChangeNotifier {
   ThemeData appTheme = ThemeData(
     colorScheme: ColorScheme.fromSeed(seedColor: Colors.black12),
   );
+  UserProfile userProfile = UserProfile.defaultProfile;
+  Locale locale = const Locale('es'); // Idioma por defecto: español
 
   AppState();
 
@@ -43,5 +46,23 @@ class AppState with ChangeNotifier {
     notifyListeners();
 
     return appColor;
+  }
+
+  // Update user profile
+  void setUserProfile(UserProfile profile) {
+    userProfile = profile;
+    notifyListeners();
+  }
+
+  // Update user gender
+  void setUserGender(UserGender gender) {
+    userProfile = userProfile.copyWith(gender: gender);
+    notifyListeners();
+  }
+
+  // Change app locale
+  void setLocale(Locale newLocale) {
+    locale = newLocale;
+    notifyListeners();
   }
 }

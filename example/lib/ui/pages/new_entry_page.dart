@@ -1,8 +1,10 @@
 import 'package:example/config/data/diary_repository.dart';
 import 'package:example/config/ia/app_agents/diary_agent.dart';
 import 'package:example/config/models/diary_entry.dart';
+import 'package:example/config/state/app_state.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 
 /// Pantalla para crear o editar una entrada del diario
@@ -345,12 +347,17 @@ class _NewEntryPageState extends State<NewEntryPage> {
     setState(() => _isSaving = true);
 
     try {
+      // Obtener el perfil del usuario para el género
+      final appState = context.read<AppState>();
+      final userGenderPrompt = appState.userProfile.gender.promptTerm;
+
       // Generar imagen si no hay ninguna
       List<String> finalImagePaths = List.from(_imagePaths);
       if (finalImagePaths.isEmpty) {
         final generatedImagePath = await _diaryAgent.generateImage(
           content: content,
           title: _titleController.text.trim(),
+          userGenderPrompt: userGenderPrompt,
         );
         if (generatedImagePath != null) {
           finalImagePaths.add(generatedImagePath);

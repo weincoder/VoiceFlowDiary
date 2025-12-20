@@ -1,7 +1,10 @@
 import 'package:example/config/data/diary_repository.dart';
 import 'package:example/config/models/diary_entry.dart';
+import 'package:example/l10n/app_localizations.dart';
 import 'package:example/ui/pages/new_entry_page.dart';
+import 'package:example/ui/pages/user_profile_page.dart';
 import 'package:example/ui/widgets/entry_card.dart';
+import 'package:example/ui/widgets/language_selector.dart';
 import 'package:example/ui/widgets/live_voice_assistant.dart';
 import 'package:example/ui/widgets/voice_assistant_button.dart';
 import 'package:example/ui/widgets/voice_command_button.dart';
@@ -128,17 +131,20 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
   }
 
   PreferredSizeWidget _buildAppBar(ThemeData theme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.transparent,
       title: Text(
-        'Mi Diario',
+        l10n.myDiary,
         style: theme.textTheme.headlineMedium?.copyWith(
           fontWeight: FontWeight.w300,
           letterSpacing: 0.5,
         ),
       ),
       actions: [
+        const LanguageSelector(),
         IconButton(
           icon: const Icon(Icons.help_outline),
           onPressed: () {
@@ -147,28 +153,31 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
               builder: (context) => const VoiceCommandsHelpDialog(),
             );
           },
-          tooltip: 'Comandos de voz',
+          tooltip: l10n.voiceCommands,
         ),
         IconButton(
           icon: const Icon(Icons.insights_outlined),
           onPressed: () {
             // TODO: Navegar a estadísticas
           },
-          tooltip: 'Estadísticas',
+          tooltip: l10n.statistics,
         ),
         IconButton(
           icon: const Icon(Icons.search_outlined),
           onPressed: () {
             // TODO: Abrir búsqueda
           },
-          tooltip: 'Buscar',
+          tooltip: l10n.search,
         ),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           onPressed: () {
-            // TODO: Abrir configuración
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const UserProfilePage()),
+            );
           },
-          tooltip: 'Configuración',
+          tooltip: l10n.settings,
         ),
       ],
     );
@@ -269,37 +278,28 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
   }
 
   String _getDateKey(DateTime date) {
+    final l10n = AppLocalizations.of(context)!;
     final now = DateTime.now();
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return 'Hoy';
+      return l10n.today;
     } else if (difference.inDays == 1) {
-      return 'Ayer';
+      return l10n.yesterday;
     } else {
       return '${date.day} ${_getMonth(date.month)} ${date.year}';
     }
   }
 
   String _getMonth(int month) {
-    const months = [
-      'Ene',
-      'Feb',
-      'Mar',
-      'Abr',
-      'May',
-      'Jun',
-      'Jul',
-      'Ago',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dic',
-    ];
+    final l10n = AppLocalizations.of(context)!;
+    final months = l10n.months.split(',');
     return months[month - 1];
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -307,14 +307,14 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
           Icon(Icons.book_outlined, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 24),
           Text(
-            'Comienza tu viaje',
+            l10n.startYourJourney,
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w300),
           ),
           const SizedBox(height: 8),
           Text(
-            'Captura tus pensamientos, momentos\ny emociones con IA',
+            l10n.captureYourThoughts,
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
@@ -324,7 +324,7 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
           ElevatedButton.icon(
             onPressed: _createNewEntry,
             icon: const Icon(Icons.edit_outlined),
-            label: const Text('Primera Entrada'),
+            label: Text(l10n.firstEntry),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(
@@ -338,6 +338,8 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
   }
 
   Widget _buildFAB(ColorScheme colorScheme) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -370,9 +372,9 @@ class _DiaryHomePageState extends State<DiaryHomePage> {
               size: 24,
               color: Colors.white,
             ),
-            label: const Text(
-              'Nueva Entrada',
-              style: TextStyle(
+            label: Text(
+              l10n.newEntry,
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
                 color: Colors.white,

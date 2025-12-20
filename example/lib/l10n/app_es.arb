@@ -1,0 +1,103 @@
+{
+  "@@locale": "es",
+  "appTitle": "Diario de Voz",
+  
+  "myDiary": "Mi Diario",
+  
+  "voiceCommands": "Comandos de voz",
+  "statistics": "Estadísticas",
+  "search": "Buscar",
+  "settings": "Configuración",
+  
+  "startYourJourney": "Comienza tu viaje",
+  "captureYourThoughts": "Captura tus pensamientos, momentos\ny emociones con IA",
+  "firstEntry": "Primera Entrada",
+  
+  "newEntry": "Nueva Entrada",
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  
+  "title": "Título",
+  "titleHint": "Título de la entrada (opcional)",
+  "content": "Contenido",
+  "contentHint": "Escribe sobre tu día, tus pensamientos, tus sentimientos...",
+  "contentCannotBeEmpty": "El contenido no puede estar vacío",
+  
+  "addImage": "Agregar Imagen",
+  "takePhoto": "Tomar Foto",
+  "chooseFromGallery": "Elegir de Galería",
+  "generatingImage": "Generando imagen con IA...",
+  
+  "analyzing": "Analizando...",
+  "savingEntry": "Guardando entrada...",
+  "entrySaved": "Entrada guardada exitosamente",
+  "entryDeleted": "Entrada eliminada",
+  "errorSaving": "Error al guardar entrada",
+  "errorDeleting": "Error al eliminar",
+  
+  "confirmDelete": "Confirmar Eliminación",
+  "confirmDeleteMessage": "¿Estás seguro de que quieres eliminar esta entrada?",
+  "yes": "Sí",
+  "no": "No",
+  
+  "today": "Hoy",
+  "yesterday": "Ayer",
+  
+  "veryHappy": "Muy Feliz",
+  "happy": "Feliz",
+  "neutral": "Neutral",
+  "sad": "Triste",
+  "verySad": "Muy Triste",
+  "mixed": "Mixto",
+  
+  "userProfile": "Perfil de Usuario",
+  "name": "Nombre",
+  "nameHint": "Ingresa tu nombre",
+  "gender": "Género",
+  "genderHelp": "Esto ayuda a personalizar las imágenes generadas por IA",
+  "male": "Masculino",
+  "female": "Femenino",
+  "nonBinary": "No binario",
+  "preferNotToSay": "Prefiero no decir",
+  "age": "Edad",
+  "ageHint": "Ingresa tu edad",
+  "saveProfile": "Guardar Perfil",
+  "profileSaved": "Perfil guardado exitosamente",
+  "optional": "opcional",
+  
+  "voiceAssistantHelp": "Ayuda del Asistente de Voz",
+  "voiceAssistantDescription": "Puedes usar tu voz para interactuar con el diario. Estas son algunas cosas que puedes hacer:",
+  "changeColor": "Cambiar Color",
+  "changeColorExample": "\"Cambia el color de la app a azul\"",
+  "askQuestions": "Hacer Preguntas",
+  "askQuestionsExample": "\"¿Qué tiempo hace?\"",
+  "getDiarySummary": "Obtener Resumen del Diario",
+  "getDiarySummaryExample": "\"Resume mi semana\"",
+  "deleteEntry": "Eliminar Entrada",
+  "deleteEntryExample": "\"Elimina mi última entrada\"",
+  "close": "Cerrar",
+  
+  "loadingEntries": "Cargando entradas...",
+  "errorLoadingEntries": "Error al cargar entradas",
+  "noEntries": "Aún no hay entradas",
+  
+  "errorSelectingImage": "Error al seleccionar imagen",
+  "errorTakingPhoto": "Error al tomar foto",
+  
+  "recording": "Grabando...",
+  "processing": "Procesando...",
+  "tapToSpeak": "Toca para hablar",
+  "listeningLive": "Escuchando (modo en vivo)...",
+  
+  "downloadImage": "Descargar",
+  "image": "Imagen",
+  "imageDownloaded": "Imagen guardada en la galería",
+  "errorDownloadingImage": "Error al descargar imagen",
+  "permissionDenied": "Permiso Denegado",
+  "needsStoragePermission": "Esta aplicación necesita permiso de almacenamiento para guardar imágenes.",
+  "openSettings": "Abrir Configuración",
+  
+  "months": "Ene,Feb,Mar,Abr,May,Jun,Jul,Ago,Sep,Oct,Nov,Dic"
+}
