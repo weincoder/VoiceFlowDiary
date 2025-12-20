@@ -3,15 +3,15 @@ En este documento explicaremos como puedes adecuar tu ambiente local.
 ## Herramientas que necesitas instalar
 
 * Construido en las versiones:
-    + Node : 25.2.1
-    + Angular: 21.0.0
+    + flutter : 3.38
+    + Dart: 3.10.1
 
 ## Guía de instalación
 Esta sección describe el paso a paso para levantar el ambiente local.
 ### Adecuar el ambiente local
 Cada carpeta es una clase del curso. Para ejecutar cada ejemplo recuerde descargar dependencias
 ```sh
-    npm i
+    flutter pub get
 ```
 
 
@@ -46,7 +46,7 @@ Antes de ejecutar el proyecto, debes configurar las variables de entorno necesar
 ### Incia tu app 🚀
 
 ```sh
-    ng s
+    flutter run 
 ```
 ### Configurar el estándar de commits
 
@@ -78,4 +78,4 @@ git config commit.template .gitmessage.conf
 Recuerda que una vez hecho esto no debe utilizar el git commit -m sino que **unicamente copiar git commit**. De esta forma te mostrar el editor, para agregar texto debes presionar la letra “i” de insertar, debes borrar el numeral  que implique tu cambio y describirlo luego presionar escape (esc) y “:wq” para guardar los cambio o “:qa!” para descartarlos.
 
 ## Autores del Documento
- - Daniel Herrera 21/11/2025 (weincoder)
+ - Daniel Herrera 19/12/2025 (weincoder)
