@@ -26,8 +26,6 @@
 
 Transform your thoughts into beautiful diary entries using the power of Google's Gemini AI with real-time voice conversation capabilities.
 
-[Features](#-features) • [Demo](#-demo) • [Installation](#-installation) • [Architecture](#-architecture) • [Documentation](#-documentation)
-
 </div>
 
 ---
@@ -35,6 +33,13 @@ Transform your thoughts into beautiful diary entries using the power of Google's
 ## 📖 Overview
 
 **VoiceFlow Diary** is a next-generation diary application that combines classic journaling with cutting-edge AI voice technology. Built with Flutter and powered by Firebase Vertex AI (Gemini), it offers multiple ways to capture your daily moments, from traditional writing to hands-free voice conversations.
+
+
+## 🛠️ Installation & Usage
+
+We have prepared a detailed guide to get the project running.
+
+👉 **[Go to GETTING STARTED Guide](GETTINGSTARTED.md)**
 
 ### 📱 App Gallery
 

@@ -26,11 +26,19 @@
 
 Transforma tus pensamientos en hermosas entradas de diario usando el poder de Gemini AI de Google con capacidades de conversación de voz en tiempo real.
 
-[Características](#-características) • [Demo](#-demo) • [Instalación](#-instalación) • [Arquitectura](#-arquitectura) • [Documentación](#-documentación)
 
 </div>
 
 ---
+
+## 🛠️ Instalación y Uso
+
+Hemos preparado una guía detallada para poner en marcha el proyecto.
+
+👉 **[Ir a la Guía de Inicio (GETTING STARTED)](GETTINGSTARTED.md)**
+
+---
+
 
 ## 📖 Resumen
 
