@@ -1,50 +1,91 @@
+import 'dart:developer';
 import 'package:example/config/data/diary_repository.dart';
 import 'package:example/config/ia/models/ia_models.dart';
-import 'package:example/config/models/diary_entry.dart';
 import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/material.dart';
 
-/// Agente de asistente de voz para comandos interactivos
+/// Agente de asistente de voz para comandos interactivos usando Function Declarations
 class VoiceAssistantAgent {
   static final VoiceAssistantAgent _instance = VoiceAssistantAgent._internal();
   factory VoiceAssistantAgent() => _instance;
   VoiceAssistantAgent._internal();
 
-  final _gemini = FirebaseAI.vertexAI().generativeModel(
-    model: IAModels.chatModelGemini,
-  );
-
   final _repository = DiaryRepository();
 
-  /// Procesa un comando de voz y ejecuta la acción correspondiente
+  /// Crea el modelo de Gemini con Function Declarations
+  GenerativeModel _createModelWithTools() {
+    return FirebaseAI.vertexAI().generativeModel(
+      model: IAModels.chatModelGemini,
+      tools: [
+        Tool.functionDeclarations([
+          _buildChangeColorTool(),
+          _buildGetSummaryTool(),
+          _buildDeleteEntryTool(),
+        ]),
+      ],
+      systemInstruction: Content.text(_getSystemInstruction()),
+    );
+  }
+
+  String _getSystemInstruction() {
+    return '''
+Eres un asistente personal inteligente para una aplicación de diario.
+Hablas español de forma natural, amigable y conversacional.
+
+CAPACIDADES:
+1. Cambiar el color/tema de la aplicación (usa setAppColor)
+   - Acepta cualquier descripción de color del usuario
+   - Ejemplos: "azul", "color alegre", "algo profesional", "tono oscuro", "como el atardecer"
+   
+2. Responder preguntas sobre cualquier tema (responde directamente)
+   - Proporciona información útil y concisa
+   
+3. Crear resúmenes de las entradas del diario (usa getDiarySummary)
+   - Resúmenes del día, semana, mes o todas las entradas
+   
+4. Eliminar entradas (usa deleteEntry con confirmación)
+   - Siempre pide confirmación antes de eliminar
+
+INSTRUCCIONES:
+- Responde de forma concisa y amigable (máximo 3 oraciones)
+- Para colores, acepta CUALQUIER descripción: colores específicos, emociones, tonos, estilos
+- Interpreta creativamente las descripciones de color del usuario
+- Antes de eliminar, SIEMPRE pide confirmación explícita
+- Para resúmenes, sé breve pero informativo
+
+EJEMPLOS DE CAMBIO DE COLOR:
+- "cambia a azul" → usa setAppColor con "azul"
+- "quiero un color alegre" → usa setAppColor con "alegre"
+- "algo profesional y serio" → usa setAppColor con "profesional y serio"
+- "como el mar" → usa setAppColor con "como el mar"
+- "tono oscuro" → usa setAppColor con "tono oscuro"
+''';
+  }
+
+  /// Procesa un comando de voz usando Function Declarations
   Future<VoiceCommandResult> processCommand(String transcription) async {
     try {
-      // Primero, clasificar el comando
-      final commandType = await _classifyCommand(transcription);
+      final model = _createModelWithTools();
 
-      switch (commandType) {
-        case VoiceCommandType.changeColor:
-          return await _handleColorChange(transcription);
+      // Enviar el comando al modelo
+      final chat = model.startChat();
+      final response = await chat.sendMessage(Content.text(transcription));
 
-        case VoiceCommandType.answerQuestion:
-          return await _handleQuestion(transcription);
-
-        case VoiceCommandType.summarize:
-          return await _handleSummary(transcription);
-
-        case VoiceCommandType.deleteEntry:
-          return await _handleDelete(transcription);
-
-        case VoiceCommandType.unknown:
-          return VoiceCommandResult(
-            type: VoiceCommandType.unknown,
-            message:
-                'No entendí el comando. Prueba con: "cambia el color", "¿qué tiempo hace?", "resumen del día" o "elimina la última entrada"',
-            success: false,
-          );
+      // Verificar si hay function calls
+      final functionCalls = response.functionCalls;
+      if (functionCalls.isNotEmpty) {
+        return await _handleFunctionCalls(functionCalls, chat);
       }
+
+      // Si no hay function calls, es una respuesta directa
+      final text = response.text?.trim() ?? 'No pude procesar el comando';
+      return VoiceCommandResult(
+        type: VoiceCommandType.answerQuestion,
+        message: text,
+        success: true,
+      );
     } catch (e) {
-      debugPrint('Error en processCommand: $e');
+      log('Error en processCommand: $e');
       return VoiceCommandResult(
         type: VoiceCommandType.unknown,
         message: 'Error al procesar comando: $e',
@@ -53,73 +94,56 @@ class VoiceAssistantAgent {
     }
   }
 
-  /// Clasifica el tipo de comando usando Gemini
-  Future<VoiceCommandType> _classifyCommand(String transcription) async {
-    final prompt =
-        '''
-Clasifica el siguiente comando de voz en una de estas categorías:
+  /// Maneja las llamadas a funciones desde Gemini
+  Future<VoiceCommandResult> _handleFunctionCalls(
+    Iterable<FunctionCall> functionCalls,
+    ChatSession chat,
+  ) async {
+    for (var call in functionCalls) {
+      log('Function call: ${call.name}');
 
-CATEGORÍAS:
-1. CHANGE_COLOR: Usuario quiere cambiar el color/tema de la aplicación
-   Ejemplos: "cambia el color", "pon el tema oscuro", "color azul"
-   
-2. ANSWER_QUESTION: Usuario hace una pregunta sobre cualquier tema
-   Ejemplos: "¿qué tiempo hace?", "¿cuál es la capital de Francia?", "dame un consejo"
-   
-3. SUMMARIZE: Usuario quiere un resumen de sus entradas
-   Ejemplos: "resume mi día", "resumen de la semana", "qué he escrito hoy"
-   
-4. DELETE_ENTRY: Usuario quiere eliminar una entrada
-   Ejemplos: "elimina la última entrada", "borra la nota de ayer", "elimina mi entrada"
-   
-5. UNKNOWN: No encaja en ninguna categoría
+      switch (call.name) {
+        case 'setAppColor':
+          return await _handleColorChange(call, chat);
+        case 'getDiarySummary':
+          return await _handleGetSummary(call, chat);
+        case 'deleteEntry':
+          return await _handleDeleteEntry(call, chat);
+      }
+    }
 
-Comando: "$transcription"
-
-Responde SOLO con una de estas palabras: CHANGE_COLOR, ANSWER_QUESTION, SUMMARIZE, DELETE_ENTRY, UNKNOWN
-''';
-
-    final response = await _gemini.generateContent([Content.text(prompt)]);
-    final result = response.text?.trim().toUpperCase() ?? 'UNKNOWN';
-
-    if (result.contains('CHANGE_COLOR')) return VoiceCommandType.changeColor;
-    if (result.contains('ANSWER_QUESTION'))
-      return VoiceCommandType.answerQuestion;
-    if (result.contains('SUMMARIZE')) return VoiceCommandType.summarize;
-    if (result.contains('DELETE_ENTRY')) return VoiceCommandType.deleteEntry;
-    return VoiceCommandType.unknown;
+    return VoiceCommandResult(
+      type: VoiceCommandType.unknown,
+      message: 'Función no reconocida',
+      success: false,
+    );
   }
 
-  /// Maneja comandos de cambio de color
-  Future<VoiceCommandResult> _handleColorChange(String transcription) async {
+  // ========== MANEJO DE HERRAMIENTAS ==========
+
+  /// Maneja el cambio de color de la aplicación
+  Future<VoiceCommandResult> _handleColorChange(
+    FunctionCall call,
+    ChatSession chat,
+  ) async {
     try {
-      final prompt =
-          '''
-El usuario quiere cambiar el color de la aplicación.
+      final colorDescription =
+          call.args['colorDescription']?.toString() ?? 'azul';
 
-Comando: "$transcription"
+      log('Interpretando descripción de color: $colorDescription');
 
-Basándote en el comando, elige UN color apropiado de esta lista:
-- blue (azul)
-- red (rojo)
-- green (verde)
-- purple (morado)
-- orange (naranja)
-- pink (rosa)
-- teal (turquesa)
-- indigo (índigo)
-- brown (café)
-- amber (ámbar)
+      // Pedir a la IA que interprete la descripción y elija el mejor color
+      final color = await _interpretColorDescription(colorDescription);
+      final colorName = _getColorNameFromMaterial(color);
 
-Responde SOLO con el nombre del color en inglés (sin explicación).
-Si no mencionan un color específico, elige uno aleatorio y menciona cuál elegiste.
-''';
+      log('Color seleccionado: $colorName');
 
-      final response = await _gemini.generateContent([Content.text(prompt)]);
-      final colorName = response.text?.trim().toLowerCase() ?? 'blue';
-
-      // Mapear a MaterialColor
-      final color = _getColorFromName(colorName);
+      // Enviar respuesta al modelo para que confirme al usuario
+      await chat.sendMessage(
+        Content.text(
+          'Perfecto, he cambiado el color a $colorName basándome en "$colorDescription". Confirma esto al usuario de forma natural.',
+        ),
+      );
 
       return VoiceCommandResult(
         type: VoiceCommandType.changeColor,
@@ -128,7 +152,7 @@ Si no mencionan un color específico, elige uno aleatorio y menciona cuál elegi
         data: {'color': color, 'colorName': colorName},
       );
     } catch (e) {
-      debugPrint('Error en _handleColorChange: $e');
+      log('Error en _handleColorChange: $e');
       return VoiceCommandResult(
         type: VoiceCommandType.changeColor,
         message: 'No pude cambiar el color',
@@ -137,46 +161,17 @@ Si no mencionan un color específico, elige uno aleatorio y menciona cuál elegi
     }
   }
 
-  /// Responde preguntas generales
-  Future<VoiceCommandResult> _handleQuestion(String transcription) async {
+  /// Maneja la generación de resúmenes
+  Future<VoiceCommandResult> _handleGetSummary(
+    FunctionCall call,
+    ChatSession chat,
+  ) async {
     try {
-      final prompt =
-          '''
-El usuario te hace una pregunta. Responde de forma natural, amigable y concisa (máximo 3 oraciones).
+      final timeRange = call.args['timeRange']?.toString() ?? 'all';
 
-Pregunta: "$transcription"
-
-Responde como un asistente personal útil. Si no sabes algo, sé honesto.
-''';
-
-      final response = await _gemini.generateContent([Content.text(prompt)]);
-      final answer = response.text?.trim() ?? 'No pude encontrar una respuesta';
-
-      return VoiceCommandResult(
-        type: VoiceCommandType.answerQuestion,
-        message: answer,
-        success: true,
-      );
-    } catch (e) {
-      debugPrint('Error en _handleQuestion: $e');
-      return VoiceCommandResult(
-        type: VoiceCommandType.answerQuestion,
-        message: 'No pude procesar tu pregunta',
-        success: false,
-      );
-    }
-  }
-
-  /// Genera resumen de entradas
-  Future<VoiceCommandResult> _handleSummary(String transcription) async {
-    try {
-      // Determinar el rango temporal
-      final timeRange = await _getTimeRange(transcription);
-
-      // Obtener entradas del rango
       final entries = await _repository.getEntries(limit: 100);
-
       if (entries.isEmpty) {
+        await chat.sendMessage(Content.text('No hay entradas en el diario'));
         return VoiceCommandResult(
           type: VoiceCommandType.summarize,
           message: 'No tienes entradas para resumir',
@@ -184,10 +179,10 @@ Responde como un asistente personal útil. Si no sabes algo, sé honesto.
         );
       }
 
-      // Filtrar por fecha si es necesario
+      // Filtrar por tiempo
       final now = DateTime.now();
-      final filteredEntries = entries.where((entry) {
-        final diff = now.difference(entry.createdAt);
+      final filtered = entries.where((e) {
+        final diff = now.difference(e.createdAt);
         switch (timeRange) {
           case 'today':
             return diff.inHours < 24;
@@ -195,13 +190,13 @@ Responde como un asistente personal útil. Si no sabes algo, sé honesto.
             return diff.inDays < 7;
           case 'month':
             return diff.inDays < 30;
-          case 'all':
           default:
             return true;
         }
       }).toList();
 
-      if (filteredEntries.isEmpty) {
+      if (filtered.isEmpty) {
+        await chat.sendMessage(Content.text('No hay entradas en ese período'));
         return VoiceCommandResult(
           type: VoiceCommandType.summarize,
           message: 'No tienes entradas en ese período',
@@ -209,34 +204,34 @@ Responde como un asistente personal útil. Si no sabes algo, sé honesto.
         );
       }
 
-      // Crear resumen con Gemini
-      final entriesText = filteredEntries
+      // Crear resumen para que el modelo lo procese
+      final summaryText = filtered
           .take(10)
           .map((e) {
-            return '${e.formattedDate}: ${e.title.isNotEmpty ? e.title + " - " : ""}${e.contentPreview}';
+            return '${e.formattedDate}: ${e.contentPreview}';
           })
-          .join('\n\n');
+          .join('\n');
 
-      final prompt =
-          '''
-Resume estas entradas de diario de forma natural y amigable (2-3 oraciones):
+      final response = await chat.sendMessage(
+        Content.text('''
+Encontré ${filtered.length} entradas. Aquí está un resumen:
 
-$entriesText
+$summaryText
 
-Resume los temas principales, el estado emocional general y momentos destacados.
-''';
+Resume esto de forma natural y amigable en 2-3 oraciones.
+'''),
+      );
 
-      final response = await _gemini.generateContent([Content.text(prompt)]);
       final summary = response.text?.trim() ?? 'No pude crear el resumen';
 
       return VoiceCommandResult(
         type: VoiceCommandType.summarize,
-        message: '📊 Resumen (${filteredEntries.length} entradas):\n\n$summary',
+        message: summary,
         success: true,
-        data: {'entries': filteredEntries},
+        data: {'entries': filtered},
       );
     } catch (e) {
-      debugPrint('Error en _handleSummary: $e');
+      log('Error en _handleGetSummary: $e');
       return VoiceCommandResult(
         type: VoiceCommandType.summarize,
         message: 'No pude crear el resumen',
@@ -245,15 +240,17 @@ Resume los temas principales, el estado emocional general y momentos destacados.
     }
   }
 
-  /// Elimina una entrada
-  Future<VoiceCommandResult> _handleDelete(String transcription) async {
+  /// Maneja la eliminación de entradas
+  Future<VoiceCommandResult> _handleDeleteEntry(
+    FunctionCall call,
+    ChatSession chat,
+  ) async {
     try {
-      // Determinar qué entrada eliminar
-      final deleteTarget = await _identifyDeleteTarget(transcription);
+      final target = call.args['target']?.toString() ?? 'last';
 
       final entries = await _repository.getEntries(limit: 10);
-
       if (entries.isEmpty) {
+        await chat.sendMessage(Content.text('No hay entradas para eliminar'));
         return VoiceCommandResult(
           type: VoiceCommandType.deleteEntry,
           message: 'No hay entradas para eliminar',
@@ -261,20 +258,7 @@ Resume los temas principales, el estado emocional general y momentos destacados.
         );
       }
 
-      DiaryEntry? entryToDelete;
-
-      switch (deleteTarget) {
-        case 'last':
-        case 'ultima':
-          entryToDelete = entries.first;
-          break;
-        case 'first':
-        case 'primera':
-          entryToDelete = entries.last;
-          break;
-        default:
-          entryToDelete = entries.first;
-      }
+      final entryToDelete = target == 'first' ? entries.last : entries.first;
 
       return VoiceCommandResult(
         type: VoiceCommandType.deleteEntry,
@@ -285,7 +269,7 @@ Resume los temas principales, el estado emocional general y momentos destacados.
         requiresConfirmation: true,
       );
     } catch (e) {
-      debugPrint('Error en _handleDelete: $e');
+      log('Error en _handleDeleteEntry: $e');
       return VoiceCommandResult(
         type: VoiceCommandType.deleteEntry,
         message: 'No pude procesar la eliminación',
@@ -294,78 +278,246 @@ Resume los temas principales, el estado emocional general y momentos destacados.
     }
   }
 
-  Future<String> _getTimeRange(String transcription) async {
-    final text = transcription.toLowerCase();
-    if (text.contains('hoy') || text.contains('día')) return 'today';
-    if (text.contains('semana')) return 'week';
-    if (text.contains('mes')) return 'month';
-    return 'all';
+  // ========== DECLARACIONES DE HERRAMIENTAS ==========
+
+  FunctionDeclaration _buildChangeColorTool() {
+    return FunctionDeclaration(
+      'setAppColor',
+      'Cambia el color primario de la aplicación basándose en la descripción del usuario',
+      parameters: {
+        'colorDescription': Schema.string(
+          description:
+              'Descripción del color que el usuario quiere. Puede ser un color específico (azul, rojo), un tono (oscuro, claro, pastel), una emoción (alegre, serio, relajante), o cualquier descripción creativa. Interpreta la descripción y elige el color de Material Design que mejor coincida.',
+        ),
+      },
+    );
   }
 
-  Future<String> _identifyDeleteTarget(String transcription) async {
-    final text = transcription.toLowerCase();
-    if (text.contains('última') ||
-        text.contains('ultimo') ||
-        text.contains('last')) {
-      return 'last';
+  FunctionDeclaration _buildGetSummaryTool() {
+    return FunctionDeclaration(
+      'getDiarySummary',
+      'Obtiene un resumen de las entradas del diario',
+      parameters: {
+        'timeRange': Schema.string(
+          description: 'Rango temporal: today, week, month, all',
+        ),
+      },
+    );
+  }
+
+  FunctionDeclaration _buildDeleteEntryTool() {
+    return FunctionDeclaration(
+      'deleteEntry',
+      'Elimina una entrada del diario (requiere confirmación del usuario)',
+      parameters: {
+        'target': Schema.string(
+          description: 'Qué entrada eliminar: last (última) o first (primera)',
+        ),
+      },
+    );
+  }
+
+  // ========== UTILIDADES ==========
+
+  /// Interpreta una descripción de color y retorna el MaterialColor más apropiado
+  Future<MaterialColor> _interpretColorDescription(String description) async {
+    try {
+      // Crear un modelo temporal para interpretación de color
+      final model = FirebaseAI.vertexAI().generativeModel(
+        model: IAModels.chatModelGemini,
+      );
+
+      final prompt =
+          '''
+Interpreta esta descripción de color y elige EL MEJOR MaterialColor de Flutter que coincida.
+
+Descripción del usuario: "$description"
+
+COLORES DISPONIBLES DE MATERIAL DESIGN:
+- red: Rojo vibrante, energético, apasionado
+- pink: Rosa, dulce, romántico, suave
+- purple: Morado/púrpura, creativo, místico, elegante
+- deepPurple: Púrpura profundo, sofisticado, nocturno
+- indigo: Índigo, profesional, tecnológico, moderno
+- blue: Azul, confiable, calmante, clásico
+- lightBlue: Azul claro, fresco, aireado, suave
+- cyan: Cian, digital, fresco, vibrante
+- teal: Verde azulado/turquesa, equilibrado, natural
+- green: Verde, naturaleza, crecimiento, armonía
+- lightGreen: Verde claro, primaveral, fresco
+- lime: Lima, brillante, juvenil, energético
+- yellow: Amarillo, alegre, soleado, optimista
+- amber: Ámbar, cálido, acogedor, dorado
+- orange: Naranja, enérgico, entusiasta, cálido
+- deepOrange: Naranja profundo, intenso, atardecer
+- brown: Café/marrón, terroso, cálido, natural
+- grey: Gris, neutral, profesional, minimalista
+- blueGrey: Gris azulado, moderno, sofisticado, corporativo
+
+INSTRUCCIONES:
+- Considera el significado emocional y visual de la descripción
+- Si mencionan un color específico, úsalo
+- Si describen una emoción, elige el color que mejor la represente
+- Si piden algo "oscuro" o "claro", considera las variantes (deep, light)
+- Si piden algo "profesional" o "serio", considera blue, blueGrey, indigo
+- Si piden algo "alegre" o "divertido", considera yellow, orange, lime
+- Si piden algo "relajante" o "calmante", considera blue, teal, green
+- Si piden algo "energético" o "vibrante", considera red, orange, pink
+
+Responde SOLO con el nombre exacto del color en inglés (sin explicación).
+Ejemplo: "blue" o "deepPurple" o "lightGreen"
+''';
+
+      final response = await model.generateContent([Content.text(prompt)]);
+      final colorName = response.text?.trim().toLowerCase() ?? 'blue';
+
+      log('IA interpretó "$description" como: $colorName');
+
+      return _getColorFromName(colorName);
+    } catch (e) {
+      log('Error interpretando color: $e');
+      return Colors.blue; // Color por defecto
     }
-    if (text.contains('primera') ||
-        text.contains('primero') ||
-        text.contains('first')) {
-      return 'first';
-    }
-    return 'last';
+  }
+
+  /// Obtiene el nombre en inglés de un MaterialColor
+  String _getColorNameFromMaterial(MaterialColor color) {
+    if (color == Colors.red) return 'red';
+    if (color == Colors.pink) return 'pink';
+    if (color == Colors.purple) return 'purple';
+    if (color == Colors.deepPurple) return 'deepPurple';
+    if (color == Colors.indigo) return 'indigo';
+    if (color == Colors.blue) return 'blue';
+    if (color == Colors.lightBlue) return 'lightBlue';
+    if (color == Colors.cyan) return 'cyan';
+    if (color == Colors.teal) return 'teal';
+    if (color == Colors.green) return 'green';
+    if (color == Colors.lightGreen) return 'lightGreen';
+    if (color == Colors.lime) return 'lime';
+    if (color == Colors.yellow) return 'yellow';
+    if (color == Colors.amber) return 'amber';
+    if (color == Colors.orange) return 'orange';
+    if (color == Colors.deepOrange) return 'deepOrange';
+    if (color == Colors.brown) return 'brown';
+    if (color == Colors.grey) return 'grey';
+    if (color == Colors.blueGrey) return 'blueGrey';
+    return 'blue';
   }
 
   MaterialColor _getColorFromName(String name) {
-    switch (name.toLowerCase()) {
+    final colorName = name.toLowerCase().replaceAll(' ', '');
+    switch (colorName) {
       case 'red':
+      case 'rojo':
         return Colors.red;
-      case 'blue':
-        return Colors.blue;
-      case 'green':
-        return Colors.green;
-      case 'purple':
-        return Colors.purple;
-      case 'orange':
-        return Colors.orange;
       case 'pink':
+      case 'rosa':
         return Colors.pink;
-      case 'teal':
-        return Colors.teal;
+      case 'purple':
+      case 'morado':
+      case 'púrpura':
+        return Colors.purple;
+      case 'deeppurple':
+      case 'purpleprofundo':
+        return Colors.deepPurple;
       case 'indigo':
+      case 'índigo':
         return Colors.indigo;
-      case 'brown':
-        return Colors.brown;
+      case 'blue':
+      case 'azul':
+        return Colors.blue;
+      case 'lightblue':
+      case 'azulclaro':
+        return Colors.lightBlue;
+      case 'cyan':
+      case 'cian':
+        return Colors.cyan;
+      case 'teal':
+      case 'turquesa':
+      case 'verdeazulado':
+        return Colors.teal;
+      case 'green':
+      case 'verde':
+        return Colors.green;
+      case 'lightgreen':
+      case 'verdeclaro':
+        return Colors.lightGreen;
+      case 'lime':
+      case 'lima':
+        return Colors.lime;
+      case 'yellow':
+      case 'amarillo':
+        return Colors.yellow;
       case 'amber':
+      case 'ámbar':
+      case 'ambar':
         return Colors.amber;
+      case 'orange':
+      case 'naranja':
+        return Colors.orange;
+      case 'deeporange':
+      case 'naranjaprofundo':
+        return Colors.deepOrange;
+      case 'brown':
+      case 'café':
+      case 'marrón':
+      case 'marron':
+        return Colors.brown;
+      case 'grey':
+      case 'gray':
+      case 'gris':
+        return Colors.grey;
+      case 'bluegrey':
+      case 'blueGrey':
+      case 'grisazulado':
+        return Colors.blueGrey;
       default:
         return Colors.blue;
     }
   }
 
   String _getColorSpanishName(String name) {
-    switch (name.toLowerCase()) {
+    final colorName = name.toLowerCase().replaceAll(' ', '');
+    switch (colorName) {
       case 'red':
         return 'rojo';
-      case 'blue':
-        return 'azul';
-      case 'green':
-        return 'verde';
-      case 'purple':
-        return 'morado';
-      case 'orange':
-        return 'naranja';
       case 'pink':
         return 'rosa';
-      case 'teal':
-        return 'turquesa';
+      case 'purple':
+        return 'morado';
+      case 'deeppurple':
+        return 'púrpura profundo';
       case 'indigo':
         return 'índigo';
-      case 'brown':
-        return 'café';
+      case 'blue':
+        return 'azul';
+      case 'lightblue':
+        return 'azul claro';
+      case 'cyan':
+        return 'cian';
+      case 'teal':
+        return 'turquesa';
+      case 'green':
+        return 'verde';
+      case 'lightgreen':
+        return 'verde claro';
+      case 'lime':
+        return 'lima';
+      case 'yellow':
+        return 'amarillo';
       case 'amber':
         return 'ámbar';
+      case 'orange':
+        return 'naranja';
+      case 'deeporange':
+        return 'naranja profundo';
+      case 'brown':
+        return 'café';
+      case 'grey':
+      case 'gray':
+        return 'gris';
+      case 'bluegrey':
+        return 'gris azulado';
       default:
         return name;
     }
